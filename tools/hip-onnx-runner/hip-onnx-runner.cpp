@@ -1052,7 +1052,7 @@ int main(int argc, char *argv[]) {
       ep_opts["dump_dir"] = dump_dir_u8;
     }
     session_opts.AppendExecutionProvider_V2(env, devices, ep_opts);
-    session_opts.AddConfigEntry("session.disable_cpu_ep_fallback", "1");
+    session_opts.AddConfigEntry("session.disable_cpu_ep_fallback", "0");
   }
 
   // Free-dimension values for symbolic input dims. Each entry is "name:value".

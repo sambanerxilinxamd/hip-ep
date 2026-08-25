@@ -19,6 +19,16 @@ struct AddToHip : public mlir::RewritePattern {
                   mlir::PatternRewriter &rewriter) const override;
 };
 
+/// onnx.Sum -> a left-associated chain of hip.add operations.
+struct SumToHip : public mlir::RewritePattern {
+  SumToHip(mlir::MLIRContext *ctx)
+      : RewritePattern("onnx.Sum", /*benefit=*/1, ctx) {}
+
+  mlir::LogicalResult
+  matchAndRewrite(mlir::Operation *op,
+                  mlir::PatternRewriter &rewriter) const override;
+};
+
 /// onnx.Mul -> hip.mul
 struct MulToHip : public mlir::RewritePattern {
   MulToHip(mlir::MLIRContext *ctx)
@@ -62,6 +72,44 @@ AddToHip::matchAndRewrite(mlir::Operation *op,
   auto hipOp =
       mlir::hip::AddOp::create(rewriter, loc, context, a, b, *initOrFailure);
   rewriter.replaceOp(op, hipOp->getResult(0));
+  return mlir::success();
+}
+
+mlir::LogicalResult
+SumToHip::matchAndRewrite(mlir::Operation *op,
+                          mlir::PatternRewriter &rewriter) const {
+  auto operands = op->getOperands();
+  if (operands.empty())
+    return rewriter.notifyMatchFailure(op, "Sum requires at least one operand");
+
+  if (operands.size() == 1) {
+    rewriter.replaceOp(op, operands.front());
+    return mlir::success();
+  }
+
+  auto ctxOrFailure = getContextArg(op, rewriter);
+  if (mlir::failed(ctxOrFailure))
+    return mlir::failure();
+  mlir::Value context = *ctxOrFailure;
+  mlir::Location loc = op->getLoc();
+  auto resultType =
+      mlir::cast<mlir::RankedTensorType>(op->getResult(0).getType());
+  mlir::Value accumulated = operands.front();
+
+  for (mlir::Value operand : operands.drop_front()) {
+    mlir::FailureOr<mlir::Value> initOrFailure =
+        createBroadcastEmptyTensor(rewriter, loc, resultType,
+                                   {accumulated, operand});
+    if (mlir::failed(initOrFailure))
+      return rewriter.notifyMatchFailure(
+          op, "Sum: no ranked operand spans dynamic result dim");
+
+    auto hipOp = mlir::hip::AddOp::create(
+        rewriter, loc, context, accumulated, operand, *initOrFailure);
+    accumulated = hipOp->getResult(0);
+  }
+
+  rewriter.replaceOp(op, accumulated);
   return mlir::success();
 }
 
@@ -119,7 +167,7 @@ SubToHip::matchAndRewrite(mlir::Operation *op,
 
 void populateElementwiseConversionPatterns(RewritePatternSet &patterns,
                                            MLIRContext *ctx) {
-  patterns.add<AddToHip, MulToHip, SubToHip>(ctx);
+  patterns.add<AddToHip, SumToHip, MulToHip, SubToHip>(ctx);
 }
 
 } // namespace hip

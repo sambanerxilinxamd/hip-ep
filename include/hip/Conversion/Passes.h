@@ -7,6 +7,7 @@
 
 #include "hip/Conversion/HipToLLVM/Passes.h"
 #include "hip/Conversion/OnnxToHip/Passes.h"
+#include "hip/Conversion/DxcgcToHip/Passes.h"
 #include "hip/Conversion/OnnxToHipDNN/Passes.h"
 #include "hip/Conversion/OnnxToHipsr/OnnxToHipsr.h"
 
@@ -30,3 +31,5 @@ void registerConversionPasses();
 } // namespace hip::compiler
 
 #endif // HIP_COMPILER_CONVERSION_PASSES_H
+
+
