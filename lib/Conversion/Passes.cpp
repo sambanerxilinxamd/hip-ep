@@ -14,6 +14,10 @@ void registerConversionPasses() {
   });
 
   mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
+    return mlir::hip::createConvertDxcgcToHipPass();
+  });
+
+  mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
     return mlir::hip::createOutlineOnnxToHipDNNPass();
   });
 
@@ -25,3 +29,5 @@ void registerConversionPasses() {
 }
 
 } // namespace hip::compiler
+
+

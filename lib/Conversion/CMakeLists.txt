@@ -6,6 +6,7 @@
 message(STATUS "Building Conversion Libraries")
 
 add_subdirectory(OnnxToHip)
+add_subdirectory(DxcgcToHip)
 add_subdirectory(OnnxToHipsr)
 add_subdirectory(OnnxToHipDNN)
 add_subdirectory(HipToLLVM)
@@ -20,6 +21,7 @@ add_dependencies(HipConversion HipsrConversionPassIncGen)
 
 target_link_libraries(HipConversion PUBLIC
   OnnxToHip
+  DxcgcToHip
   OnnxToHipsr
   OnnxToHipDNN
   HipToLLVM
@@ -28,3 +30,5 @@ target_link_libraries(HipConversion PUBLIC
 )
 
 set_target_properties(HipConversion PROPERTIES FOLDER "mlir/Conversion")
+
+

@@ -96,6 +96,21 @@ def ConvertOnnxToHipPass : Pass<"convert-onnx-to-hip", "mlir::ModuleOp"> {
   ];
 }
 
+
+def ConvertDxcgcToHipPass : Pass<"convert-dxcgc-to-hip", "mlir::ModuleOp"> {
+  let summary = "Convert parsed DxCGC operations to HIP dialect (tensor DPS)";
+  let description = [{
+    Converts generic parsed DxCGC operations named cgc.* or cgc_op.* into HIP
+    dialect operations using tensor destination-passing style. The pass supports
+    add, mul, sub, div, and matmul. Each converted function must have
+    !hip.context as argument zero, normally inserted by --hip-add-context-arg.
+  }];
+  let dependentDialects = [
+    "mlir::hip::HipDialect",
+    "mlir::func::FuncDialect",
+    "mlir::tensor::TensorDialect"
+  ];
+}
 def AssignOpStateSlotsPass
     : Pass<"assign-op-state-slots", "mlir::ModuleOp"> {
   let summary = "Assign one op-state slot per stateful op instance";
@@ -865,3 +880,4 @@ def SplitDuplicateDpsInitsPass
 }
 
 #endif // HIP_PASSES
+
